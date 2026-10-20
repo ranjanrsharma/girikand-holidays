@@ -28,6 +28,7 @@ async function open(): Promise<Db> {
 
   const { PGlite } = await import("@electric-sql/pglite");
   const dir = process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite");
+  if (dir !== "memory") fs.mkdirSync(dir, { recursive: true }); // PGlite does not create its folder
   const client = dir === "memory" ? new PGlite() : new PGlite(dir);
   await client.exec(schema);
   const db: Db = {
