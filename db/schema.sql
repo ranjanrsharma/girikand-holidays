@@ -70,3 +70,17 @@ CREATE TABLE IF NOT EXISTS enquiries (
   status      TEXT NOT NULL DEFAULT 'new',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Staff sessions live here so logging out revokes the cookie on the server too.
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id         TEXT PRIMARY KEY,
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+-- Failed admin logins, for the 3-attempts lockout.
+CREATE TABLE IF NOT EXISTS login_failures (
+  id  SERIAL PRIMARY KEY,
+  ip  TEXT NOT NULL,
+  at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS login_failures_ip_idx ON login_failures(ip, at);

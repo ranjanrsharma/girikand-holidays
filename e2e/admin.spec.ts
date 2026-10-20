@@ -110,8 +110,34 @@ test.describe.serial("admin", () => {
     await expect(page.getByRole("row", { name: /E2E Test Trip/ })).toHaveCount(0);
   });
 
+  test("logging out revokes the session even if the cookie is copied", async ({ page, context }) => {
+    await login(page);
+    const copied = await context.cookies();
+    await page.getByRole("button", { name: "Log out" }).click();
+    await expect(page).toHaveURL(/\/admin\/login$/);
+    await context.addCookies(copied);
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
   test("the CSV export returns 401 when logged out", async ({ request }) => {
     const res = await request.get("/admin/enquiries/export");
     expect(res.status()).toBe(401);
+  });
+  // keep last: the lockout is per address and would block later logins in this run
+  test("three wrong passwords lock the login, even for the right password", async ({ page }) => {
+    for (let i = 0; i < 3; i++) {
+      await page.goto("/admin/login");
+      await page.getByLabel("Email").fill("admin@example.com");
+      await page.getByLabel("Password").fill("wrong-" + i);
+      await page.getByRole("button", { name: "Log in" }).click();
+      await expect(page.getByRole("alert")).toBeVisible();
+    }
+    await page.goto("/admin/login");
+    await page.getByLabel("Email").fill("admin@example.com");
+    await page.getByLabel("Password").fill("admin123");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByText(/Too many failed attempts/)).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/login$/);
   });
 });

@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { BRAND } from "@/lib/config";
+import { buildEnquiryEmail, emailFrom, sendEmail } from "@/lib/email";
 import { createEnquiry, getPackageById } from "@/lib/packages";
 import { isRealDate, todayISO } from "@/lib/dates";
 
@@ -84,9 +86,10 @@ async function handle(kind: "enquiry" | "callback", fd: FormData): Promise<Enqui
     }
 
     const d = parsed.data as z.infer<typeof enquirySchema>;
-    await createEnquiry({
+    const pkg = d.packageId ? await getPackageById(Number(d.packageId)) : null;
+    const enquiry = {
       kind,
-      packageId: d.packageId && (await getPackageById(Number(d.packageId))) ? Number(d.packageId) : null,
+      packageId: pkg ? pkg.id : null,
       name: d.name,
       phone: `+91${d.phone}`,
       email: kind === "enquiry" ? d.email || null : null,
@@ -94,9 +97,11 @@ async function handle(kind: "enquiry" | "callback", fd: FormData): Promise<Enqui
       adults: kind === "enquiry" ? d.adults : null,
       children: kind === "enquiry" ? d.children : null,
       message: kind === "enquiry" ? d.message || null : null,
-    });
+    } as const;
+    await createEnquiry(enquiry);
 
-    // TODO(resend): email the enquiry to BRAND.enquiryEmail once Resend is wired up.
+    // The enquiry is saved; a failed email must never turn that into an error for the visitor.
+    await sendEmail(buildEnquiryEmail({ ...enquiry, packageTitle: pkg?.title ?? null }, BRAND.enquiryEmail, emailFrom()));
 
     return { ok: true, message: kind === "callback" ? "Thanks, we will call you back soon." : "Thanks, we have your message and will get back to you soon." };
   } catch {
