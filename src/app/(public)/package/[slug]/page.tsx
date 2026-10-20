@@ -32,10 +32,16 @@ const WHY = [
   "Clear prices and inclusions before you commit.",
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function PackagePage({ params }: Props) {
   const { slug } = await params;
   const pkg = await getPublishedBySlug(slug);
   if (!pkg) notFound();
+  // Hidden prices must not reach the browser at all, so blank them here rather than in the UI.
+  const departures = pkg.priceHidden
+    ? pkg.departures.map((d) => ({ ...d, priceTwin: 0, priceTriple: null, priceSingle: null, priceChildBed: null, priceChildNoBed: null, offerPriceTwin: null }))
+    : pkg.departures;
 
   const bookable = pkg.departures.filter((d) => d.status !== "sold-out");
   const minPrice = !pkg.priceHidden && bookable.length ? Math.min(...bookable.map(effectivePrice)) : null;
@@ -127,7 +133,7 @@ export default async function PackagePage({ params }: Props) {
       </div>
 
       <div className={wrap}>
-        <DepartureProvider departures={pkg.departures} priceHidden={pkg.priceHidden}>
+        <DepartureProvider departures={departures} priceHidden={pkg.priceHidden}>
           <DeparturesSection pkg={target} />
           <div>
             <SectionTabs />

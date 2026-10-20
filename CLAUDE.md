@@ -32,3 +32,6 @@ Next.js 16 (App Router, TypeScript), Tailwind v4, Postgres via `postgres` (hoste
 - One branch and pull request per feature; run `npm run check` and show its output before saying done.
 - UI changes: take a Playwright screenshot and compare with the reference screenshots in the project folder (`/mnt/project-files/uploads/hearth/`).
 - Never commit `.env.local` or `.data/`.
+
+## Hosted Postgres
+Local dev uses PGlite, hosted uses the `postgres` driver; they differ on JSON parameters. Always pass JSON as `$n::text::jsonb` (already done in `savePackage`), and after changing queries run the app once against a real Postgres via `DATABASE_URL`.

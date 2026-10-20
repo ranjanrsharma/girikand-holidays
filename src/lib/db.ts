@@ -44,6 +44,9 @@ async function open(): Promise<Db> {
 /** One shared connection per server process. Uses DATABASE_URL (Postgres) or an embedded local database. */
 export function getDb(): Promise<Db> {
   const g = globalThis as unknown as { __holidayDb?: Promise<Db> };
-  g.__holidayDb ??= open();
+  g.__holidayDb ??= open().catch((e) => {
+    g.__holidayDb = undefined; // let the next request retry instead of caching the failure
+    throw e;
+  });
   return g.__holidayDb;
 }

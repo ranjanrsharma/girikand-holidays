@@ -1,8 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { createEnquiry } from "@/lib/packages";
-import { todayISO } from "@/lib/dates";
+import { createEnquiry, getPackageById } from "@/lib/packages";
+import { isRealDate, todayISO } from "@/lib/dates";
 
 export type EnquiryField = "name" | "phone" | "email" | "travelDate" | "adults" | "children" | "message";
 
@@ -41,7 +41,7 @@ const enquirySchema = callbackSchema.extend({
   travelDate: z
     .string()
     .trim()
-    .refine((v) => v === "" || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v + "T00:00:00Z"))), "Enter a valid date")
+    .refine((v) => v === "" || (isRealDate(v)), "Enter a valid date")
     .refine((v) => v === "" || v >= todayISO(), "Travel date cannot be in the past"),
   adults: z.coerce.number("Enter number of adults").int("Enter a whole number").min(1, "At least 1 adult").max(20, "At most 20 adults"),
   children: z.coerce.number("Enter number of children").int("Enter a whole number").min(0, "Cannot be negative").max(20, "At most 20 children"),
@@ -86,7 +86,7 @@ async function handle(kind: "enquiry" | "callback", fd: FormData): Promise<Enqui
     const d = parsed.data as z.infer<typeof enquirySchema>;
     await createEnquiry({
       kind,
-      packageId: d.packageId ? Number(d.packageId) : null,
+      packageId: d.packageId && (await getPackageById(Number(d.packageId))) ? Number(d.packageId) : null,
       name: d.name,
       phone: `+91${d.phone}`,
       email: kind === "enquiry" ? d.email || null : null,

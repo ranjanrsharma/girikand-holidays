@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { DEFAULT_CANCELLATION_NOTES, DEFAULT_PAYMENT_TERMS, DEFAULT_SLABS } from "@/lib/cancellation";
 import { INCLUDE_KEYS, MEAL_CODES, type IncludeKey } from "@/lib/config";
-import { todayISO } from "@/lib/dates";
+import { isRealDate, todayISO } from "@/lib/dates";
 import type { Departure, IncludeState, ItineraryDay, PackageInput, PackageRecord } from "@/lib/types";
 
 // ---------- form state (what the client editor holds; numbers stay strings while typing) ----------
@@ -113,7 +113,7 @@ const optInt = (label: string, max = 100_000_000) =>
   z.string().trim().refine((v) => v === "" || /^\d+$/.test(v), `${label} must be a whole number`)
     .transform((v) => (v === "" ? null : Number(v)))
     .refine((n) => n === null || n <= max, `${label} is too large`);
-const imageUrl = z.string().trim().refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v) || /^\/\S+$/.test(v), "Enter a full web address (https://...) or a path starting with /");
+const imageUrl = z.string().trim().refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v) || /^\/(?!\/)\S*$/.test(v), "Enter a full web address (https://...) or a path starting with /");
 
 export const packageSchema = z.object({
   title: z.string().trim().min(3, "Enter a title").max(200),
@@ -206,7 +206,7 @@ export interface DepartureFormState {
   priceSingle: string; priceChildBed: string; priceChildNoBed: string; offerPriceTwin: string;
 }
 
-const isoDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a date").refine((v) => !Number.isNaN(Date.parse(v + "T00:00:00Z")), "Enter a valid date");
+const isoDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a date").refine((v) => isRealDate(v), "Enter a valid date");
 
 export const departureSchema = z.object({
   date: isoDate,

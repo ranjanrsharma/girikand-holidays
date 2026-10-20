@@ -1,3 +1,5 @@
+import { BUSINESS_TZ } from "./config";
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -24,5 +26,10 @@ export function formatMonth(ym: string): string {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: BUSINESS_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+/** True for a real calendar date written YYYY-MM-DD (rejects 2026-02-31). */
+export function isRealDate(iso: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) && new Date(iso + "T00:00:00Z").toISOString().slice(0, 10) === iso;
 }

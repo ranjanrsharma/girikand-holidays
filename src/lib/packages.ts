@@ -117,7 +117,7 @@ export async function listPublished(filters: ListFilters = {}): Promise<ListResu
       const hay = [pkg.title, pkg.code, pkg.state ?? "", pkg.country, ...pkg.cities.map((c) => c.name)].join(" ").toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (filters.state && pkg.state !== filters.state && pkg.country !== filters.state) return false;
+    if (filters.state && (pkg.state ?? pkg.country) !== filters.state) return false;
     if (dur && (pkg.days < dur.min || pkg.days > dur.max)) return false;
     if (bud && (minPrice === null || pkg.priceHidden || minPrice < bud.min || minPrice >= bud.max)) return false;
     if (filters.month && !months.includes(filters.month)) return false;
@@ -228,7 +228,7 @@ export async function savePackage(id: number | null, input: PackageInput, conn?:
   ];
   const jsonCols = new Set(["highlights", "gallery", "cities", "tags", "includes", "itinerary", "inclusions", "exclusions",
     "need_to_know", "cancellation_slabs", "cancellation_notes", "payment_terms", "remarks"]);
-  const ph = cols.map((c, i) => `$${i + 1}${jsonCols.has(c) ? "::jsonb" : ""}`);
+  const ph = cols.map((c, i) => `$${i + 1}${jsonCols.has(c) ? "::text::jsonb" : ""}`);
 
   if (id === null) {
     const r = await db.query<Row>(`INSERT INTO packages (${cols.join(", ")}) VALUES (${ph.join(", ")}) RETURNING id`, values);
@@ -281,10 +281,12 @@ export async function saveDeparture(id: number | null, input: DepartureInput, co
         price_child_bed, price_child_nobed, offer_price_twin) VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`, v);
     out = r[0].id;
   } else {
-    await db.query(
-      `UPDATE departures SET package_id = $1, date = $2::date, departure_city = $3, seats_total = $4, seats_left = $5, price_twin = $6,
-        price_triple = $7, price_single = $8, price_child_bed = $9, price_child_nobed = $10, offer_price_twin = $11 WHERE id = $12`,
+    const done = await db.query<Row>(
+      `UPDATE departures SET date = $2::date, departure_city = $3, seats_total = $4, seats_left = $5, price_twin = $6,
+        price_triple = $7, price_single = $8, price_child_bed = $9, price_child_nobed = $10, offer_price_twin = $11
+       WHERE id = $12 AND package_id = $1 RETURNING id`,
       [...v, id]);
+    if (!done.length) throw new Error("This departure does not belong to that package.");
     out = id;
   }
   await refreshSummary(input.packageId, db);

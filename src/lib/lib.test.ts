@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { computeSlabs, DEFAULT_SLABS } from "./cancellation";
-import { addDays, formatDate } from "./dates";
+import { addDays, formatDate, isRealDate, todayISO } from "./dates";
 import { emiPerMonth, formatINR } from "./money";
 
 describe("money", () => {
@@ -18,6 +18,20 @@ describe("dates", () => {
   it("adds days without timezone drift", () => {
     expect(addDays("2026-11-01", -121)).toBe("2026-07-03");
     expect(formatDate("2026-11-01")).toBe("01 Nov 2026");
+  });
+});
+
+describe("calendar dates", () => {
+  it("rejects impossible dates that Date.parse would roll over", () => {
+    expect(isRealDate("2026-02-31")).toBe(false);
+    expect(isRealDate("2026-02-28")).toBe(true);
+    expect(isRealDate("2026-2-3")).toBe(false);
+  });
+  it("uses the Indian business day for today", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-01T20:00:00Z")); // 01:30 on 2 Nov in India
+    expect(todayISO()).toBe("2026-11-02");
+    vi.useRealTimers();
   });
 });
 

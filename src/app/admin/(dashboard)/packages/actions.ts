@@ -27,8 +27,11 @@ export async function savePackageAction(id: number | null, intent: SaveIntent, f
   const existing = id === null ? null : await getPackageById(id);
   if (id !== null && !existing) return { ok: false, message: "This package no longer exists.", errors: {} };
 
+  if (existing && existing.status !== "draft" && existing.slug !== v.slug) {
+    return { ok: false, message: "The web address of a live package cannot change. Unpublish it first.", errors: { slug: "Locked while the package is live" } };
+  }
   const status = intent === "draft" ? "draft" : intent === "publish" ? "published" : (existing?.status ?? "draft");
-  if (status === "published") {
+  if (intent === "publish") {
     const problems = publishProblems({
       days: v.days, itinerary: v.itinerary, heroImage: v.heroImage || null,
       publishWithoutPhoto: v.publishWithoutPhoto, departures: existing?.departures ?? [],

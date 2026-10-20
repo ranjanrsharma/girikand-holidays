@@ -8,6 +8,9 @@ export const BRAND = {
 
 export const PAGE_SIZE = 10;
 
+/** "Today" for departures and travel dates is the business day in this timezone, not UTC. */
+export const BUSINESS_TZ = "Asia/Kolkata";
+
 /** EMI shown on cards: monthly instalment over EMI_MONTHS at EMI_MONTHLY_RATE. Fitted to reference figures (₹16,000 → ₹1,558, ₹22,000 → ₹2,142); confirm the real rule. */
 export const EMI_MONTHS = 12;
 export const EMI_MONTHLY_RATE = 0.0248;
