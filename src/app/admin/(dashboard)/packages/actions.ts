@@ -51,9 +51,9 @@ export async function savePackageAction(id: number | null, intent: SaveIntent, f
 
 function departureInput(packageId: number, f: DepartureFormState) {
   const r = departureSchema.safeParse(f);
-  if (!r.success) return { errors: issuesToErrors(r.error.issues) } as const;
+  if (!r.success) return { ok: false, errors: issuesToErrors(r.error.issues) } as const;
   const v = r.data;
-  return { data: { packageId, ...v } } as const;
+  return { ok: true, data: { packageId, ...v } } as const;
 }
 
 export async function saveDepartureAction(packageId: number, departureId: number | null, f: DepartureFormState): Promise<DepartureResult> {
@@ -61,7 +61,7 @@ export async function saveDepartureAction(packageId: number, departureId: number
   const pkg = Number.isInteger(packageId) ? await getPackageById(packageId) : null;
   if (!pkg) return { ok: false, message: "This package no longer exists.", errors: {} };
   const r = departureInput(packageId, f);
-  if ("errors" in r) return { ok: false, message: "Please fix the highlighted fields.", errors: r.errors };
+  if (!r.ok) return { ok: false, message: "Please fix the highlighted fields.", errors: r.errors };
   if (departureId === null && r.data.date < todayISO()) {
     return { ok: false, message: "Please fix the highlighted fields.", errors: { date: "A new departure cannot be in the past" } };
   }

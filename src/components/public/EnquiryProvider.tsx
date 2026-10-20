@@ -69,7 +69,7 @@ function EnquiryForm({ pkg, minDate, email, onClose }: { pkg: EnquiryTarget | nu
           <button type="button" onClick={onClose} className={`${btnPrimary} mt-4`}>Close</button>
         </div>
       ) : (
-        <form action={action} noValidate className="relative mt-5 grid gap-4 sm:grid-cols-2">
+        <form action={action} noValidate className="relative mt-5 grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
           {pkg && <input type="hidden" name="packageId" value={pkg.id} />}
           <Honeypot />
           {state.message && (

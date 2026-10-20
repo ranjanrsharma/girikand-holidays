@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { savePackageAction } from "@/app/admin/(dashboard)/packages/actions";
 import { computeSlabs, DEFAULT_PAYMENT_TERMS, DEFAULT_SLABS } from "@/lib/cancellation";
 import { INCLUDE_KEYS, MEAL_CODES, TAG_OPTIONS } from "@/lib/config";
@@ -47,19 +47,19 @@ export function PackageEditor({ packageId, initial, status, departures, slugLock
   const [toast, setToast] = useState(banner ?? "");
   const [slugTouched, setSlugTouched] = useState(slugLocked);
   const [pending, start] = useTransition();
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const set = <K extends keyof PackageFormState>(k: K, v: PackageFormState[K]) => setF((s) => ({ ...s, [k]: v }));
-  const showToast = (m: string) => {
-    setToast(m);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 6000);
+  const clearErr = (k: string) =>
+    setErrors((prev) => (Object.keys(prev).some((x) => x === k || x.startsWith(k + ".")) ? Object.fromEntries(Object.entries(prev).filter(([x]) => x !== k && !x.startsWith(k + "."))) : prev));
+  const set = <K extends keyof PackageFormState>(k: K, v: PackageFormState[K]) => {
+    setF((s) => ({ ...s, [k]: v }));
+    clearErr(k);
   };
+  const showToast = setToast;
   useEffect(() => {
-    if (banner) showToast(banner);
-    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 6000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const errCount = (keys: readonly string[]) =>
     Object.keys(errors).filter((k) => keys.some((p) => k === p || k.startsWith(p + "."))).length;
@@ -150,7 +150,7 @@ export function PackageEditor({ packageId, initial, status, departures, slugLock
           {tab === "basics" && (
             <div className="grid gap-4 sm:grid-cols-2">
               <TextInput id="title" label="Title" value={f.title} error={e("title")} className="sm:col-span-2"
-                onChange={(v) => setF((s) => ({ ...s, title: v, slug: slugTouched ? s.slug : slugify(v) }))} />
+                onChange={(v) => { setF((s) => ({ ...s, title: v, slug: slugTouched ? s.slug : slugify(v) })); clearErr("title"); if (!slugTouched) clearErr("slug"); }} />
               <TextInput id="slug" label="Slug (web address)" value={f.slug} error={e("slug")} hint="Used in /package/your-slug. Generated from the title until you edit it."
                 onChange={(v) => { setSlugTouched(true); set("slug", v); }} />
               <TextInput id="code" label="Code" value={f.code} error={e("code")} placeholder="GHGA1" onChange={(v) => set("code", v.toUpperCase())} />
@@ -199,7 +199,7 @@ export function PackageEditor({ packageId, initial, status, departures, slugLock
                 <LinesEditor id="highlights" label="Highlights" values={f.highlights} errors={errors} addLabel="Add highlight" onChange={(v) => set("highlights", v)} />
               </div>
               <Check id="isFeatured" label="Featured on the home page" checked={f.isFeatured} onChange={(v) => set("isFeatured", v)} />
-              <Check id="priceHidden" label="Hide price" hint="Visitors see 'Ask for price' instead of a figure." checked={f.priceHidden} onChange={(v) => set("priceHidden", v)} />
+              <Check id="priceHidden" label="Hide price" hint="Visitors see no price figure." checked={f.priceHidden} onChange={(v) => set("priceHidden", v)} />
             </div>
           )}
 
@@ -246,7 +246,7 @@ export function PackageEditor({ packageId, initial, status, departures, slugLock
                 <button type="button" disabled={pending} className={btnPrimary} onClick={() => submit("publish")}>Save and publish</button>
               </>
             )}
-            <span className="text-xs text-ink-500">Publishing needs an upcoming priced departure, a hero image (or the 'publish without photo' tick on the Media tab) and an itinerary entry for every day.</span>
+            <span className="hidden text-xs text-ink-500 sm:inline">Publishing needs an upcoming priced departure, a hero image (or the publish without photo tick on the Media tab) and an itinerary entry for every day.</span>
           </div>
         )}
       </form>
@@ -345,12 +345,12 @@ function ItineraryTab({ f, set, errors }: TabProps) {
   );
 }
 
-function PoliciesTab({ f, set, errors }: TabProps) {
+function PoliciesTab({ f, set }: TabProps) {
   const slabs = f.cancellationSlabs;
   const upd = (i: number, patch: Partial<(typeof slabs)[number]>) => set("cancellationSlabs", slabs.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const parsed = slabs.map((s) => ({ fromDays: num(s.fromDays), toDays: num(s.toDays), percent: num(s.percent) }));
   const live = validateSlabs(parsed);
-  const message = errors.cancellationSlabs ?? live;
+  const message = live;
   const sampleDate = useMemo(() => addDays(todayISO(), 60), []);
   const preview = live === null ? computeSlabs(parsed, sampleDate, 16000) : null;
 
@@ -457,7 +457,7 @@ function MediaTab({ f, set, errors }: TabProps) {
         <TextInput id="heroImage" label="Hero image URL" value={f.heroImage} error={errors.heroImage} placeholder="https://..." onChange={(v) => set("heroImage", v)} />
         <Preview key={f.heroImage} url={f.heroImage} alt="Hero preview" />
       </div>
-      <Check id="publishWithoutPhoto" label="Publish without photo" hint="Tick to allow publishing while there is no hero image (a placeholder is shown)." checked={f.publishWithoutPhoto} onChange={(v) => set("publishWithoutPhoto", v)} />
+      <Check id="publishWithoutPhoto" label="Publish without photo" hint="Tick to allow publishing while there is no hero image. A placeholder is shown." checked={f.publishWithoutPhoto} onChange={(v) => set("publishWithoutPhoto", v)} />
       <fieldset className="space-y-3">
         <legend className="mb-1 text-sm font-medium">Gallery image URLs</legend>
         {gallery.map((g, i) => (

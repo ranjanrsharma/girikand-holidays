@@ -19,7 +19,7 @@ export function CallbackForm({ packageId, layout = "stack", idPrefix = "cb" }: {
       {state.ok ? (
         <p role="status" className="mt-4 rounded-md bg-good/10 p-3 font-medium text-good" data-testid="callback-success">{state.message}</p>
       ) : (
-        <form action={action} noValidate className={`relative mt-4 grid gap-3 ${row ? "md:grid-cols-[1fr_1fr_auto] md:items-start" : ""}`}>
+        <form action={action} noValidate className={`relative mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 ${row ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start" : ""}`}>
           {packageId !== undefined && <input type="hidden" name="packageId" value={packageId} />}
           <Honeypot />
           {state.message && <p role="alert" className="rounded-md bg-bad/10 p-2 text-sm text-bad md:col-span-3">{state.message}</p>}

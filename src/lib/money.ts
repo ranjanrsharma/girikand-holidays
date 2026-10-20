@@ -11,3 +11,8 @@ export function emiPerMonth(price: number): number {
   const f = Math.pow(1 + r, EMI_MONTHS);
   return Math.round((price * r * f) / (f - 1));
 }
+
+/** The price a visitor pays per person on twin sharing for a departure (offer price when set). */
+export function effectivePrice(d: { priceTwin: number; offerPriceTwin: number | null }): number {
+  return d.offerPriceTwin ?? d.priceTwin;
+}

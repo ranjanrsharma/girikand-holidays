@@ -1,7 +1,7 @@
 import { BUDGET_BUCKETS, DURATION_BUCKETS, PAGE_SIZE } from "./config";
 import { getDb, type Db } from "./db";
 import { formatMonth, todayISO } from "./dates";
-import { emiPerMonth } from "./money";
+import { effectivePrice, emiPerMonth } from "./money";
 import type {
   Departure,
   DepartureInput,
@@ -54,10 +54,7 @@ function mapDeparture(r: Row): Departure {
   };
 }
 
-/** The price a visitor pays per person on twin sharing for a departure. */
-export function effectivePrice(d: Pick<Departure, "priceTwin" | "offerPriceTwin">): number {
-  return d.offerPriceTwin ?? d.priceTwin;
-}
+export { effectivePrice };
 
 // ---------- public reads ----------
 
@@ -105,7 +102,7 @@ function toCard(e: Enriched): PackageCard {
     cityCount: p.cities.length, stateCount: p.state ? 1 : 0, countryCount: p.region === "World" ? 1 : 0,
     includes: p.includes, heroImage: p.heroImage, priceHidden: p.priceHidden,
     minPrice: shownPrice, emiPerMonth: shownPrice ? emiPerMonth(shownPrice) : null,
-    departureCount: e.departures.length,
+    departureCount: e.departures.length, isFeatured: p.isFeatured,
   };
 }
 

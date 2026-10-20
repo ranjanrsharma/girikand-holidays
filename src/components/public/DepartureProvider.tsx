@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { effectivePrice } from "@/lib/money";
 import type { Departure } from "@/lib/types";
 
 export type RoomKey = "twin" | "triple" | "single" | "childBed" | "childNoBed";
@@ -16,7 +17,7 @@ export const ROOMS: { key: RoomKey; label: string }[] = [
 /** Price a visitor pays per person for a room type; null when that room type is not offered. */
 export function roomPrice(d: Departure, room: RoomKey): number | null {
   switch (room) {
-    case "twin": return d.offerPriceTwin ?? d.priceTwin; // same rule as effectivePrice() in src/lib/packages.ts (that file is server-only)
+    case "twin": return effectivePrice(d);
     case "triple": return d.priceTriple;
     case "single": return d.priceSingle;
     case "childBed": return d.priceChildBed;

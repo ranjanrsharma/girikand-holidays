@@ -92,6 +92,7 @@ export interface PackageCard {
   minPrice: number | null;
   emiPerMonth: number | null;
   departureCount: number;
+  isFeatured: boolean;
 }
 
 export interface PackageDetail extends PackageRecord {

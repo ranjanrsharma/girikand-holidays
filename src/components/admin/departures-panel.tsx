@@ -65,7 +65,7 @@ function EditRow({ packageId, departure, onDone }: { packageId: number; departur
         ))}
         <td className={`${td} whitespace-nowrap`}>
           <div className="flex gap-1">
-            <button type="button" disabled={pending} className={`${btnPrimary} ${btnSmall}`} onClick={save}>{pending ? "Saving..." : departure ? "Save departure" : "Add departure"}</button>
+            <button type="button" disabled={pending} className={`${btnPrimary} ${btnSmall}`} onClick={save}>{pending ? "Saving..." : departure ? "Save departure" : "Save new departure"}</button>
             <button type="button" className={`${btnSecondary} ${btnSmall}`} onClick={onDone}>Cancel</button>
           </div>
         </td>
